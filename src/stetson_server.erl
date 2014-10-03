@@ -29,8 +29,8 @@
 
 -type message() :: {connect, pid(), inet:socket(), erlang:timestamp()} |
                    {establish, pid(), node()} |
-                   {counter | gauge | timer, atom(), integer()} |
-                   {counter | gauge | timer, atom(), integer(), float()}.
+                   {counter | gauge | timer, atom() | string(), integer()} |
+                   {counter | gauge | timer, atom() | string(), integer(), float()}.
 
 -export_type([message/0]).
 
