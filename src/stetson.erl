@@ -40,7 +40,7 @@ start() -> application:start(?MODULE).
 %% @doc
 stop() -> application:stop(?MODULE).
 
--spec counter(atom(), integer()) -> ok.
+-spec counter(atom() | string(), integer()) -> ok.
 %% @doc
 counter(Stat, Step) -> stetson_server:cast({counter, Stat, Step}).
 
@@ -48,7 +48,7 @@ counter(Stat, Step) -> stetson_server:cast({counter, Stat, Step}).
 %% @doc
 counter(Bucket, Step, Rate) -> stetson_server:cast({counter, Bucket, Step, Rate}).
 
--spec gauge(atom(), integer()) -> ok.
+-spec gauge(atom() | string(), integer()) -> ok.
 %% @doc
 gauge(Stat, Step) -> stetson_server:cast({gauge, Stat, Step}).
 
