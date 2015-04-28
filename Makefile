@@ -3,11 +3,10 @@
 #
 
 REBAR=`which rebar`
-DEPS=deps/*/ebin
 
-.PHONY: deps build
+.PHONY: build
 
-all: deps build
+all: build
 
 clean:
 	rm -rf ebin
@@ -17,19 +16,14 @@ build:
 	$(REBAR) compile
 	$(MAKE) xref
 
-deps:
-	$(REBAR) get-deps
-
-test: build
-	rm -rf .eunit
-	$(REBAR) skip_deps=true eunit
-
+doc:
+	$(REBAR) skip_deps=true doc
 
 #
 # Run
 #
 
-ERL=exec erl -pa ebin $(DEPS) -sname stetson -boot start_sasl
+ERL=exec erl -pa ebin -sname stetson
 
 .PHONY: boot noboot
 
@@ -43,7 +37,7 @@ noboot: build
 # Analysis
 #
 
-PLT=./plt/current.plt
+PLT=./plt/R15B.plt
 
 WARNINGS=-Werror_handling \
   -Wrace_conditions \
@@ -57,7 +51,7 @@ APPS=kernel stdlib sasl erts ssl \
 
 build-plt: all
 	dialyzer --build_plt --output_plt $(PLT) \
-	  --apps $(APPS) $(DEPS)
+	  --apps $(APPS)
 
 dialyzer: build
 	dialyzer ebin --plt $(PLT) $(WARNINGS)
@@ -67,3 +61,7 @@ xref:
 
 typer:
 	typer --annotate --plt $(PLT) -I deps/ -r .
+
+test: all
+	$(REBAR) eunit suites=stetson apps=stetson skip_deps=true
+

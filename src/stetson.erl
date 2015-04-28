@@ -21,8 +21,12 @@
          counter/3,
          gauge/2,
          gauge/3,
+         tc/2,
+         tc/4,
          timer/2,
-         timer/3]).
+         timer/3,
+         tc_band/2,
+         tc_band/4]).
 
 %% Callbacks
 -export([start/2,
@@ -40,7 +44,7 @@ start() -> application:start(?MODULE).
 %% @doc
 stop() -> application:stop(?MODULE).
 
--spec counter(atom() | string(), integer()) -> ok.
+-spec counter(atom(), integer()) -> ok.
 %% @doc
 counter(Stat, Step) -> stetson_server:cast({counter, Stat, Step}).
 
@@ -48,7 +52,7 @@ counter(Stat, Step) -> stetson_server:cast({counter, Stat, Step}).
 %% @doc
 counter(Bucket, Step, Rate) -> stetson_server:cast({counter, Bucket, Step, Rate}).
 
--spec gauge(atom() | string(), integer()) -> ok.
+-spec gauge(atom(), integer()) -> ok.
 %% @doc
 gauge(Stat, Step) -> stetson_server:cast({gauge, Stat, Step}).
 
@@ -64,6 +68,35 @@ timer(Bucket, Ms) -> stetson_server:cast({timer, Bucket, Ms}).
 %% @doc
 timer(Bucket, Ms, Rate) -> stetson_server:cast({timer, Bucket, Ms, Rate}).
 
+-spec band_ms(atom() | string(), pos_integer()) -> ok.
+band_ms(Bucket, Ms) ->
+    stetson_server:cast({band_ms, Bucket, Ms}).
+
+
+-spec tc(string() | atom(), fun(() -> any())) -> any().
+tc(Bucket, Fun) ->
+    {MicroS, R} = timer:tc(Fun),
+    timer(Bucket, MicroS div 1000),
+    R.
+
+-spec tc(string() | atom(), atom(), atom(), list()) -> any().
+tc(Bucket, M, F, A) ->
+    {MicroS, R} = timer:tc(M, F, A),
+    timer(Bucket, MicroS div 1000),
+    R.
+
+-spec tc_band(string() | atom(), fun(() -> any())) -> any().
+tc_band(Bucket, Fun) ->
+    {MicroS, R} = timer:tc(Fun),
+    band_ms(Bucket, MicroS div 1000),
+    R.
+
+-spec tc_band(string() | atom(), atom(), atom(), list()) -> any().
+tc_band(Bucket, M, F, A) ->
+    {MicroS, R} = timer:tc(M, F, A),
+    band_ms(Bucket, MicroS div 1000),
+    R.
+
 %%
 %% Callbacks
 %%
@@ -71,9 +104,7 @@ timer(Bucket, Ms, Rate) -> stetson_server:cast({timer, Bucket, Ms, Rate}).
 -spec start(normal, _Args) -> {ok, pid()} | {error, _}.
 %% @hidden
 start(normal, _Args) ->
-    Uri = env(?STATSD_URI, "localhost:8126"),
-    Ns  = env(?GRAPHITE_NS, ""),
-    case stetson_sup:start_link(Uri, Ns) of
+    case stetson_sup:start_link(env('statsd.uri'), env('graphite.ns')) of
         ignore -> {error, sup_returned_ignore};
         Ret    -> Ret
     end.
@@ -86,24 +117,21 @@ stop(_Args) -> ok.
 %% Private
 %%
 
--spec env(atom(), any()) -> any().
+-spec env(atom()) -> any().
 %% @doc
-env(Key, Default) ->
-    _Ignore = application:load(?MODULE),
+env(Key) ->
+    application:load(?MODULE),
     case application:get_env(?MODULE, Key) of
         undefined   -> error({config_not_found, Key});
-        {ok, Value} -> os(Value, Default)
+        {ok, Value} -> os(Value)
     end.
 
--spec os(atom() | string(), any()) -> string().
-%% @doc Try and retrieve an os ENV variable if the supplied key is
-%% an atom, falling back to the supplied default if it has not been set.
-os(Key, Default) when is_atom(Key) ->
-    case os:getenv(atom_to_list(Key)) of
-        false -> Default;
+-spec os(atom() | string()) -> string().
+%% @doc
+os(Value) when is_atom(Value) ->
+    case os:getenv(atom_to_list(Value)) of
+        false -> error({env_not_set, Value});
         Env   -> Env
     end;
-%% Anything other than an atom as a key, is considered a valid value,
-%% and is returned as-is.
-os(Value, _Default) ->
+os(Value) ->
     Value.

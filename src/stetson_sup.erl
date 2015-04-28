@@ -33,7 +33,6 @@ start_link(Uri, Ns) ->
 %% Callbacks
 %%
 
--spec init([string()]) -> {ok, {{one_for_all, pos_integer(), pos_integer()}, [supervisor:child_spec()]}}.
 %% @hidden
 init([Uri, Ns]) ->
     Spec = {stats, {stetson_server, start_link, [Uri, Ns]},

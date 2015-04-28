@@ -1,6 +1,6 @@
 {application, stetson, [
     {description, "Stetson statsd client"},
-    {vsn, "0.1.2"},
+    {vsn, "0.2.0"},
     {registered, []},
     {applications, [
         kernel,
@@ -8,7 +8,7 @@
     ]},
     {mod, {stetson, []}},
     {env, [
-        {'statsd.uri',  'STATSD_URI'},
-        {'graphite.ns', 'GRAPHITE_NS'}
+        {'statsd.uri',  "localhost:8126"},
+        {'graphite.ns', ""}
     ]}
 ]}.

@@ -8,6 +8,10 @@
 %% @doc
 %%
 
--define(SERVER,      stetson_server).
--define(STATSD_URI,  'statsd.uri').
--define(GRAPHITE_NS, 'graphite.ns').
+-define(SERVER, stetson_server).
+
+-record(s, {sock               :: gen_udp:socket(),
+            host = "localhost" :: string() | inet:ip_address(),
+            prefix = ""        :: string(),
+            port = 8126        :: inet:port_number(),
+            ns = ""            :: string()}).
